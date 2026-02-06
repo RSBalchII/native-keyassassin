@@ -1,0 +1,25 @@
+{
+  "name": "@rbalchii/native-keyassassin",
+  "version": "1.0.0",
+  "description": "Zero-copy C++ text hygiene for Node.js - removes JSON artifacts 2.3x faster than JS",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "text",
+    "cleaner",
+    "native",
+    "cpp",
+    "performance",
+    "zero-copy"
+  ],
+  "author": "Robert Balch II",
+  "license": "Elastic-2.0",
+  "gypfile": true,
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  }
+}
