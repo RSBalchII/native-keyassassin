@@ -1,6 +1,6 @@
 {
   "name": "@rbalchii/native-keyassassin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zero-copy C++ text hygiene for Node.js - removes JSON artifacts 2.3x faster than JS",
   "main": "index.js",
   "types": "index.d.ts",
