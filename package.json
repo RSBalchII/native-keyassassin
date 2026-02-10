@@ -5,7 +5,10 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "install": "node-gyp rebuild",
+    "install": "prebuild-install || node-gyp rebuild",
+    "build": "node-gyp rebuild",
+    "prebuild": "prebuildify --napi",
+    "prebuild-all": "prebuildify --napi --all",
     "test": "node test.js"
   },
   "repository": {
@@ -18,12 +21,27 @@
     "native",
     "cpp",
     "performance",
-    "zero-copy"
+    "zero-copy",
+    "prebuild",
+    "napi"
   ],
   "author": "Robert Balch II",
   "license": "Elastic-2.0",
-  "gypfile": true,
   "dependencies": {
-    "node-addon-api": "^7.0.0"
+    "node-addon-api": "^7.0.0",
+    "prebuild-install": "^7.1.1",
+    "node-gyp-build": "^4.8.0"
+  },
+  "devDependencies": {
+    "prebuildify": "^6.0.1"
+  },
+  "gypfile": true,
+  "binary": {
+    "module_name": "keyassassin",
+    "module_path": "./lib/binding/napi-v{napi_build_version}-{platform}-{arch}",
+    "remote_path": "./{name}/v{version}/{configuration}/",
+    "package_name": "{module_name}-v{version}-{napi_build_version}-{platform}-{arch}.tar.gz",
+    "host": "https://github.com/RSBalchII/native-keyassassin/releases/download/",
+    "napi_versions": [3, 4, 5, 6, 7, 8]
   }
 }

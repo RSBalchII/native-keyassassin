@@ -1,0 +1,41 @@
+name: Build Prebuilds
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: |
+          npm install -g node-gyp
+          npm install
+
+      - name: Build native module
+        run: npm run build
+
+      - name: Create prebuild
+        run: npm run prebuild
+        env:
+          NAPI_VERSION: 8
+
+      - name: Upload prebuild artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: prebuilds-${{ matrix.os }}-${{ matrix.node-version }}
+          path: lib/

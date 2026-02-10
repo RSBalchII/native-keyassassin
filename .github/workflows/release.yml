@@ -1,0 +1,180 @@
+name: Create Release with Prebuilds
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Output Release URL
+        run: |
+          echo "Release URL is: ${{ steps.create_release.outputs.html_url }}"
+          echo "UPLOAD_URL is: ${{ steps.create_release.outputs.upload_url }}" > release_info.txt
+
+      - name: Save Release Info
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-info
+          path: release_info.txt
+
+  build-windows:
+    needs: build-all
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: |
+          npm install -g node-gyp
+          npm install
+
+      - name: Build native module
+        run: npm run build
+
+      - name: Create prebuild
+        run: npm run prebuild
+        env:
+          NAPI_VERSION: 8
+
+      - name: Download Release Info
+        uses: actions/download-artifact@v3
+        with:
+          name: release-info
+
+      - name: Extract Upload URL
+        run: |
+          $uploadUrl = Get-Content release_info.txt | Select-String -Pattern "UPLOAD_URL is:" | ForEach-Object { ($_ -split ' is: ')[1] }
+          echo "UPLOAD_URL=$uploadUrl" >> $env:GITHUB_ENV
+
+      - name: Upload Prebuild to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./lib/binding/napi-v8-win32-x64/keyassassin.node
+          asset_name: keyassassin-v${{ github.ref_name }}-napi-v8-win32-x64.tar.gz
+          asset_content_type: application/gzip
+
+  build-macos:
+    needs: build-all
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: |
+          npm install -g node-gyp
+          npm install
+
+      - name: Build native module
+        run: npm run build
+
+      - name: Create prebuild
+        run: npm run prebuild
+        env:
+          NAPI_VERSION: 8
+
+      - name: Download Release Info
+        uses: actions/download-artifact@v3
+        with:
+          name: release-info
+
+      - name: Extract Upload URL
+        run: |
+          UPLOAD_URL=$(grep "UPLOAD_URL is:" release_info.txt | cut -d' ' -f3)
+          echo "UPLOAD_URL=$UPLOAD_URL" >> $GITHUB_ENV
+
+      - name: Upload Prebuild to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./lib/binding/napi-v8-darwin-x64/keyassassin.node
+          asset_name: keyassassin-v${{ github.ref_name }}-napi-v8-darwin-x64.tar.gz
+          asset_content_type: application/gzip
+
+  build-linux:
+    needs: build-all
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: |
+          npm install -g node-gyp
+          npm install
+
+      - name: Build native module
+        run: npm run build
+
+      - name: Create prebuild
+        run: npm run prebuild
+        env:
+          NAPI_VERSION: 8
+
+      - name: Download Release Info
+        uses: actions/download-artifact@v3
+        with:
+          name: release-info
+
+      - name: Set Upload URL
+        run: |
+          UPLOAD_URL=$(grep "UPLOAD_URL is:" release_info.txt | cut -d' ' -f3)
+          echo "UPLOAD_URL=$UPLOAD_URL" >> $GITHUB_ENV
+
+      - name: Upload Prebuild to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./lib/binding/napi-v8-linux-x64/keyassassin.node
+          asset_name: keyassassin-v${{ github.ref_name }}-napi-v8-linux-x64.tar.gz
+          asset_content_type: application/gzip
